@@ -1,0 +1,6 @@
+run_id,trigger,started_at,finished_at,duration_seconds,month,outcome,downloaded,skipped,missing,login_attempts,errors,screenshots
+20261003-101048-e79d,manual,2026-10-03T10:10:48+05:30,2026-10-03T10:10:53+05:30,5.1,2026-07,success,7,0,,1,,
+20261003-101053-8e93,manual,2026-10-03T10:10:53+05:30,2026-10-03T10:11:01+05:30,7.5,2026-08,success,7,0,,2,"login attempt 1: portal said 'Server busy, try again'",logs/screenshots/20261003-101053-8e93_01_login-busy.png
+20261003-101102-d021,manual,2026-10-03T10:11:02+05:30,2026-10-03T10:11:07+05:30,4.8,2026-09,partial,6,0,Vendor Payments,1,,
+20261003-101108-a4aa,manual,2026-10-03T10:11:08+05:30,2026-10-03T10:11:10+05:30,1.7,2026-05,failed,0,0,,1,login attempt 1: credentials rejected ('Invalid username or password.') | Login rejected: 'Invalid username or password.'. Check PORTAL_USERNAME/PORTAL_PASSWORD in .env. Not retrying.,logs/screenshots/20261003-101108-a4aa_01_login-rejected.png
+20261003-101111-b9c9,manual,2026-10-03T10:11:11+05:30,2026-10-03T10:11:33+05:30,22.4,2026-06,success,7,0,,2,"recovered: session expired mid-run, logged in again",

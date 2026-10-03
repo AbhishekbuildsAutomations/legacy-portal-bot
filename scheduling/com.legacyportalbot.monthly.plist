@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Runs the bot at 07:00 on the 1st of every month. Replace REPO_DIR with the repo's absolute path. -->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.legacyportalbot.monthly</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>REPO_DIR/.venv/bin/python</string>
+    <string>-m</string>
+    <string>bot</string>
+    <string>--trigger</string>
+    <string>scheduled</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>REPO_DIR</string>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Day</key>
+    <integer>1</integer>
+    <key>Hour</key>
+    <integer>7</integer>
+    <key>Minute</key>
+    <integer>0</integer>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>REPO_DIR/logs/launchd.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>REPO_DIR/logs/launchd.err.log</string>
+</dict>
+</plist>

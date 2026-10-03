@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{% block title %}VendorNet Reports{% endblock %} - VendorNet</title>
+<style>
+  body { font: 12px Verdana, Arial, sans-serif; background: #d4d0c8; margin: 0; color: #000; }
+  .banner { background: #000080; color: #fff; padding: 6px 10px; font-weight: bold; }
+  .banner a { color: #fff; }
+  main { background: #fff; border: 2px inset #808080; margin: 10px; padding: 10px; max-width: 760px; }
+  table { border-collapse: collapse; }
+  th, td { border: 1px solid #808080; padding: 3px 8px; text-align: left; }
+  th { background: #c0c0c0; }
+  button, input[type=submit] { background: #c0c0c0; border: 2px outset #fff; font: inherit; padding: 2px 10px; }
+  :focus { outline: 2px dotted #000; outline-offset: 1px; }
+  .error { color: #a00000; font-weight: bold; }
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; }
+  .notice { background: #ffffe1; border: 2px outset #fff; padding: 12px; width: 320px; }
+</style>
+</head>
+<body>
+<div class="banner">VendorNet Partner Portal v2.3 {% block userbar %}{% endblock %}</div>
+<main>{% block content %}{% endblock %}</main>
+</body>
+</html>

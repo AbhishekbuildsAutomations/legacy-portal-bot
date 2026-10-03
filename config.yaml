@@ -1,0 +1,26 @@
+# Bot settings. Credentials are NOT here: they come from .env.
+portal_url: http://127.0.0.1:5050
+
+# Reports the bot must collect every month (names exactly as the portal shows them).
+expected_reports:
+  - Sales Summary
+  - Inventory Levels
+  - Accounts Receivable Aging
+  - Customer Returns
+  - Vendor Payments
+  - Freight Charges
+  - Compliance Certificate
+
+allowed_file_types: [csv, xlsx, pdf]
+output_dir: output
+logs_dir: logs
+
+retries:
+  login_attempts: 4        # total tries for transient login failures (503, timeouts)
+  backoff_seconds: 1       # first wait; doubles each retry
+  backoff_max_seconds: 8
+  max_relogins: 5          # how many times a mid-run session expiry may be recovered
+
+timeouts:
+  page_ms: 15000           # waiting for pages and elements
+  download_ms: 20000       # waiting for a single file download
