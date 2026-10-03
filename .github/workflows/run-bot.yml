@@ -1,0 +1,72 @@
+# Runs the bot in the cloud on demand: Actions tab -> "Run bot" -> Run workflow.
+# Starts the fake portal on the runner, runs the bot against it, and publishes the
+# run summary on the run page plus the downloaded files, run log, screenshots and video.
+name: Run bot
+
+on:
+  workflow_dispatch:
+    inputs:
+      month:
+        description: "Month to collect (YYYY-MM). Blank = last month."
+        required: false
+      scenario:
+        description: "Portal fault to switch on"
+        type: choice
+        default: normal
+        options: [normal, broken-login, missing-report, popup-slow-session-timeout]
+  # To run it monthly without anyone clicking, uncomment:
+  # schedule:
+  #   - cron: "0 7 1 * *"
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python -m playwright install --with-deps chromium
+
+      - name: Throwaway credentials for this run only
+        run: |
+          pw=$(openssl rand -hex 16)
+          echo "::add-mask::$pw"
+          echo "PORTAL_USERNAME=ci_user" >> "$GITHUB_ENV"
+          echo "PORTAL_PASSWORD=$pw" >> "$GITHUB_ENV"
+
+      - name: Start the fake portal
+        env:
+          SCENARIO: ${{ inputs.scenario || 'normal' }}
+          MONTH: ${{ inputs.month }}
+        run: |
+          case "$SCENARIO" in
+            broken-login)   export FAIL_FIRST_LOGIN=1 ;;
+            missing-report) export MISSING_REPORT="vendor-payments:${MONTH:-$(date -d 'last month' +%Y-%m)}" ;;
+            popup-slow-session-timeout) export SHOW_POPUP=1 SLOW_MODE=1.5 SESSION_TIMEOUT=6 ;;
+          esac
+          nohup python -m portal > portal.log 2>&1 &
+          until curl -s -o /dev/null http://127.0.0.1:5050/login; do sleep 0.5; done
+
+      - name: Run the bot
+        id: bot
+        env:
+          MONTH: ${{ inputs.month }}
+          TRIGGER: ${{ github.event_name == 'schedule' && 'scheduled' || 'manual' }}
+        run: |
+          set +e
+          python -m bot --trigger "$TRIGGER" ${MONTH:+--month "$MONTH"} --video logs/videos | tee summary.txt
+          code=${PIPESTATUS[0]}
+          { echo '### Bot run summary'; echo '```'; cat summary.txt; echo '```'; echo "Exit code: $code (0 success, 1 partial, 2 failed)"; } >> "$GITHUB_STEP_SUMMARY"
+          [ "$code" = 1 ] && echo "::warning::Run was partial - see missing reports above"
+          [ "$code" != 2 ]   # only a failed run marks the job red
+
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: bot-run-${{ github.run_number }}
+          path: |
+            output/
+            logs/

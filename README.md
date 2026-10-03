@@ -1,5 +1,8 @@
 # Legacy Portal Report Bot
 
+[![tests](https://github.com/AbhishekbuildsAutomations/legacy-portal-bot/actions/workflows/tests.yml/badge.svg)](https://github.com/AbhishekbuildsAutomations/legacy-portal-bot/actions/workflows/tests.yml)
+[![Run bot](https://github.com/AbhishekbuildsAutomations/legacy-portal-bot/actions/workflows/run-bot.yml/badge.svg)](https://github.com/AbhishekbuildsAutomations/legacy-portal-bot/actions/workflows/run-bot.yml)
+
 Every month someone logs into an old vendor portal that has no API, downloads a stack of reports one by one, renames them and files them into folders. This bot does that job unattended, and when something goes wrong it says so in a run log instead of failing silently.
 
 > **This is code-based RPA, built in Python with [Playwright](https://playwright.dev/python/).** It is not UiPath or Power Automate Desktop. The ideas are the same (selectors, retries, exception handling, scheduling), written as code. See [the mapping table](#how-this-maps-to-uipath--power-automate).
@@ -9,6 +12,38 @@ Every month someone logs into an old vendor portal that has no API, downloads a 
 | ![Bot hits a 'Server busy' page, backs off, retries and finishes](docs/demo/broken-login.gif) | ![Bot downloads 6 of 7 reports and records the missing one](docs/demo/missing-report.gif) |
 
 The bot only ever talks to the **fake portal in this repo** (`portal/`), using made-up credentials. No real sites, no real accounts.
+
+## Screenshots
+
+All captured from the real portal and real bot runs by [`scripts/capture_screenshots.py`](scripts/capture_screenshots.py).
+
+| The fake legacy portal | Reports table (month filter + pagination) |
+|---|---|
+| ![Login page](docs/screenshots/01-login.png) | ![Reports table, page 1 of 2](docs/screenshots/03-reports-page-1.png) |
+
+**The failures the bot is built to handle**
+
+| "Server busy" (HTTP 503) on first login | Wrong password: bot stops, no retries |
+|---|---|
+| ![Server busy page](docs/screenshots/05-server-busy-503.png) | ![Invalid credentials message](docs/screenshots/02-login-rejected.png) |
+| **Popup that blocks the page until dismissed** | **Session expired mid-run, bot logs in again** |
+| ![Maintenance notice modal](docs/screenshots/06-popup-notice.png) | ![Session expired message](docs/screenshots/07-session-expired.png) |
+
+**The bot recovering from a broken login: real console output, exit code, and the renamed files**
+
+![Bot console output: login attempt 1 gets 'Server busy', retries after 1s, downloads all 7 reports](docs/screenshots/08-bot-console-recovery.png)
+
+The bot also saves its own screenshot whenever something goes wrong, and the run log points to it ([example](docs/screenshots/09-bot-error-evidence.png)). A real run log is in [`docs/sample-run-log.csv`](docs/sample-run-log.csv).
+
+## Run it in the cloud (no laptop needed)
+
+The bot can run entirely on GitHub's servers, so nothing has to be installed or left running on a laptop:
+
+1. Go to **[Actions → Run bot](https://github.com/AbhishekbuildsAutomations/legacy-portal-bot/actions/workflows/run-bot.yml)** → **Run workflow**
+2. Optionally pick a month and a portal fault (`broken-login`, `missing-report`, `popup-slow-session-timeout`)
+3. When it finishes, the run page shows the bot's summary, and the **Artifacts** section has the downloaded reports, run log, screenshots and a video of the run
+
+Each cloud run starts the fake portal on the runner, makes throwaway credentials for that run only (no stored secrets), and runs the bot against it. To run it monthly without anyone clicking, uncomment the `schedule:` lines in [`.github/workflows/run-bot.yml`](.github/workflows/run-bot.yml).
 
 ## How it works
 
@@ -129,14 +164,9 @@ The portal must be running when the scheduled job fires.
 ./scheduling/install_launchd.sh remove     # uninstall
 ```
 
-**To prove scheduling works**, get one real `scheduled` row into the log:
+**Proven on 3 Oct 2026:** launchd started the bot at 10:30 with nobody at the keyboard. The run is the `scheduled` row in [`docs/sample-run-log.csv`](docs/sample-run-log.csv): success, 6 files skipped as already downloaded, 1 new file downloaded. The job was removed afterwards, since this is a demo.
 
-1. Start the portal: `python -m portal`
-2. `./scheduling/install_launchd.sh 3` (fires 3 minutes from now)
-3. Wait, then check `logs/runs.csv` for a row with `trigger = scheduled`, plus `logs/launchd.out.log`
-4. `./scheduling/install_launchd.sh` to go back to the monthly schedule. The demo time would otherwise repeat daily.
-
-If the job fails with "Operation not permitted", macOS privacy protection is blocking background access to `~/Documents`. Either move the repo outside `Documents`/`Desktop`, or give the venv's Python Full Disk Access in System Settings → Privacy & Security.
+To repeat the test: start the portal, run `./scheduling/install_launchd.sh 3` (fires 3 minutes from now, then repeats daily at that time), check `logs/runs.csv`, then `./scheduling/install_launchd.sh remove`. If the job fails with "Operation not permitted", macOS privacy protection is blocking background access to `~/Documents`. Move the repo out of `Documents`, or give the venv's Python Full Disk Access.
 
 **cron alternative** (one line in `crontab -e`):
 
@@ -180,8 +210,8 @@ portal/            fake legacy portal (Flask): login, reports table, downloads, 
 bot/               the bot: runner.py (browser steps), runlog.py (run log), __main__.py (CLI)
 tests/             pytest suite; starts the portal itself
 scheduling/        launchd plist + installer
-scripts/           run_demos.sh: recorded demo scenarios -> GIFs
-docs/              demo GIFs, sample run log
+scripts/           run_demos.sh (recorded demo scenarios -> GIFs), capture_screenshots.py
+docs/              demo GIFs, screenshots, sample run log
 config.yaml        bot settings
 LIMITATIONS.md     what would break the bot, and what it doesn't do
 ```
